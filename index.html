@@ -54,12 +54,49 @@
   }
   button.nav-btn:hover { background: var(--accent-dark); }
   button.nav-btn:disabled { background: #cbd2db; cursor: not-allowed; }
+  button.nav-btn.secondary { background: #fff; color: var(--accent-dark); border: 1px solid var(--accent); }
+  button.nav-btn.secondary:hover { background: #eef2ff; }
 
   main {
     max-width: 900px;
     margin: 24px auto;
     padding: 0 16px 80px;
   }
+
+  #listView { display: none; }
+  #listView.show { display: block; }
+  #detailView.hide { display: none; }
+
+  .year-block {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-bottom: 16px;
+  }
+  .year-block h2 {
+    font-size: 16px;
+    margin: 0 0 12px;
+    color: var(--accent-dark);
+  }
+  .q-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 8px;
+  }
+  .q-item {
+    display: block;
+    text-align: left;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fafbfc;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .q-item:hover { background: #eef2ff; border-color: var(--accent); }
+  .q-item .qn { font-weight: bold; color: var(--accent-dark); margin-right: 4px; }
   .card {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -141,15 +178,22 @@
   <select id="qSelect"></select>
   <button class="nav-btn" id="prevBtn">← 前の問題</button>
   <button class="nav-btn" id="nextBtn">次の問題 →</button>
+  <button class="nav-btn secondary" id="listBtn">一覧</button>
 </header>
 
 <main>
-  <div class="card" id="card">
-    <div id="front"></div>
-    <div id="answerToggleWrap">
-      <button id="answerToggle">解答・解説を表示する</button>
+  <div id="listView">
+    <div id="listContainer"></div>
+  </div>
+
+  <div id="detailView">
+    <div class="card" id="card">
+      <div id="front"></div>
+      <div id="answerToggleWrap">
+        <button id="answerToggle">解答・解説を表示する</button>
+      </div>
+      <div id="answerBlock"></div>
     </div>
-    <div id="answerBlock"></div>
   </div>
 </main>
 
@@ -166,9 +210,66 @@ const answerToggle = document.getElementById('answerToggle');
 const answerBlock = document.getElementById('answerBlock');
 const prevBtn = document.getElementById('prevBtn');
 const nextBtn = document.getElementById('nextBtn');
+const listBtn = document.getElementById('listBtn');
+const listView = document.getElementById('listView');
+const detailView = document.getElementById('detailView');
+const listContainer = document.getElementById('listContainer');
 
 let curYearIdx = 0;
 let curQIdx = 0;
+let inListView = false;
+
+function buildListView() {
+  listContainer.innerHTML = '';
+  years.forEach((y, yi) => {
+    const block = document.createElement('div');
+    block.className = 'year-block';
+    const h2 = document.createElement('h2');
+    h2.textContent = y + '期';
+    block.appendChild(h2);
+
+    const grid = document.createElement('div');
+    grid.className = 'q-grid';
+    DATA[y].forEach((e, qi) => {
+      const item = document.createElement('div');
+      item.className = 'q-item';
+      item.innerHTML = '<span class="qn">問' + e.qnum + '</span>' + e.h2.split('：')[0];
+      item.addEventListener('click', () => {
+        curYearIdx = yi;
+        curQIdx = qi;
+        populateQSelect();
+        showDetail();
+        render();
+      });
+      grid.appendChild(item);
+    });
+    block.appendChild(grid);
+    listContainer.appendChild(block);
+  });
+}
+
+function showList() {
+  inListView = true;
+  listView.classList.add('show');
+  detailView.classList.add('hide');
+  listBtn.textContent = '問題に戻る';
+  window.scrollTo({top: 0, behavior: 'instant'});
+}
+
+function showDetail() {
+  inListView = false;
+  listView.classList.remove('show');
+  detailView.classList.remove('hide');
+  listBtn.textContent = '一覧';
+}
+
+listBtn.addEventListener('click', () => {
+  if (inListView) {
+    showDetail();
+  } else {
+    showList();
+  }
+});
 
 function populateYearSelect() {
   years.forEach((y, i) => {
@@ -253,6 +354,7 @@ nextBtn.addEventListener('click', () => {
 
 populateYearSelect();
 populateQSelect();
+buildListView();
 render();
 </script>
 
